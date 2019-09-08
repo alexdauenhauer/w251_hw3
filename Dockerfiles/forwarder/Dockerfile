@@ -10,4 +10,5 @@ WORKDIR /
 RUN git clone https://github.com/alexdauenhauer/w251_hw3.git
 WORKDIR /w251_hw3
 
+CMD git pull origin master
 CMD python3 forwardMessage.py

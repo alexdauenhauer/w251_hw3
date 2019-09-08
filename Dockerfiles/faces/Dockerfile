@@ -38,4 +38,5 @@ WORKDIR /w251_hw3
 
 RUN rm -f /tmp/*.deb
 
+CMD git pull origin master
 CMD python3 faceDetection.py
