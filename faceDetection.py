@@ -9,7 +9,7 @@ face_cascade = cv2.CascadeClassifier(
     )
 
 # initialize the broker
-broker = "172.20.0.1"
+broker = "172.20.0.2"
 
 def on_publish(client, message, result):
     print("message was published")
