@@ -12,6 +12,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install paho-mqtt
+RUN pip3 install ibm-cos-sdk
 
 WORKDIR /
 RUN git clone https://github.com/alexdauenhauer/w251_hw3.git
@@ -19,4 +20,4 @@ WORKDIR /w251_hw3
 
 RUN git pull origin master
 
-# CMD python3 saveToBucket.py 
+# CMD python3 saveToBucket.py
