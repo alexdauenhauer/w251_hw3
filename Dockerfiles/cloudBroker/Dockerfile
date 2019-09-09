@@ -19,4 +19,4 @@ WORKDIR /w251_hw3
 
 RUN git pull origin master
 
-CMD python3 saveToBucket.py 
+# CMD python3 saveToBucket.py 
