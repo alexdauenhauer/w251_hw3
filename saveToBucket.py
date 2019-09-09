@@ -8,19 +8,17 @@ import ibm_boto3
 import paho.mqtt.client as mqtt
 from ibm_botocore.client import Config
 
-#Code adapted from https://cognitiveclass.ai/blog/read-and-write-csv-files-in-python-from-cloud/
-
-#Saving credentials for bucket in a separate file and including a git ignore to protect identity
+# load credentials file
 with open("credentials.json", "r") as read_file:
     credentials = json.load(read_file)
 
-# updated
+# name the bucket
 bucket_name = 'alex-hw3-bucket'
 
+# set up ibm_boto config and credentials
 auth_endpoint = 'https://iam.bluemix.net/oidc/token'
 service_endpoint = 'https://s3.private.us.cloud-object-storage.appdomain.cloud'
 
-#Store relevant details for interacting with IBM COS store and uploading data
 resource = ibm_boto3.resource(
     's3',
     ibm_api_key_id=credentials['apikey'],
@@ -29,44 +27,41 @@ resource = ibm_boto3.resource(
     config=Config(signature_version='oauth'),
     endpoint_url=service_endpoint)
 
-#Code adapted from http://www.steves-internet-guide.com/publishing-messages-mqtt-client/
-broker_address_sub = "169.59.1.50" #Store IP address for broker
-# port = 1883 #Store port
-topic_sub = "faces" #Subscribe to all topics in image/capture
-qos_level = 0 #Set QOS level to 0 given connection is fairly stable and small amounts of data loss is tolerable
+# Store IP address for broker
+broker_ip = "169.59.1.50"
+# Subscribe to all topics in image/capture
+topic = "faces"
+# choosing QoS 0 because I am in control of the pipeline end-to-end so there
+# is little risk of data loss (and zero reprecussions if there is data loss)
+qos_level = 0
 
-# #Initialize a counter to ensure unique image names
-# count = 1
-
-#Define what messages and actions to take when connecting.
+# callback when connection occurs
 def on_connect(client, userdata, flags, rc):
-    if rc==0:
-        client.connected_flag=True #set flag
-        client.subscribe(topic_sub) #Subscribe to topic
+    if rc == 0:
+        client.connected_flag=True
+        client.subscribe(topic)
     print("connected: ", not bool(rc))
 
 
-#Define function for what to do when a message is received
+# callback for when message is received
 def on_message(client, userdata, message):
-    # global count #Access global variables
     print("message received ")
-    print("message topic=",message.topic)
-    print("message qos=",message.qos)
-    print("message retain flag=",message.retain)
-    # currentTopic = message.topic #Store topic for formatted file names
-    # datatype = currentTopic.split('/')[-1]
-    # dateTime = strftime("%Y-%m-%d-%H-%M-%S", gmtime()) #Store date and time file came in
-    # object_name = 'image_{}_{}_{}.png'.format(datatype,dateTime,count) #Set the file name
+    print("topic: ",message.topic)
+    print("qos: ",message.qos)
+    print("retain flag: ",message.retain)
+    # generate unique timestamp for each image
     file_name = 'face_{}.png'.format(
         str(datetime.timestamp(datetime.now())).split('.')[0])
-    msg = message.payload #Grab the payload
-    #Load data to bucket in COS
+    msg = message.payload
+    # Load data to bucket in COS
     resource.Bucket(name=bucket_name).put_object(Key=file_name, Body=msg)
-    # count +=1 #increment counter
 
 
-client_sub = mqtt.Client() #Initialize a client
-client_sub.on_message = on_message #Use custom on message function
-client_sub.on_connect = on_connect #Use custom on connect function
-client_sub.connect(broker_address_sub) #Connect to broker
-client_sub.loop_forever() #Ensure we can get all images that come through
+# Initialize a client
+client = mqtt.Client()
+client.on_message = on_message
+client.on_connect = on_connect
+# Connect to broker
+client.connect(broker_ip)
+# loop forever to grab all messages
+client.loop_forever()
