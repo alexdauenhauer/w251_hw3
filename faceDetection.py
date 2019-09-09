@@ -1,5 +1,6 @@
 import cv2
 import paho.mqtt.client as mqtt
+import time
 
 # initialize the capture device
 cap = cv2.VideoCapture(1)
@@ -50,6 +51,7 @@ while(counter < samples):
         
         # record that a face has been captured
         counter += 1
+        time.sleep(1)
 
 # when everything done, release the capture
 cap.release()
