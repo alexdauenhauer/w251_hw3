@@ -13,7 +13,7 @@ qos_level = 0
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         client.subscribe(topic_sub)
-    print("connected: ", rc)
+    print("connected: ", bool(rc))
 
 # 
 def on_publish(client, userdata, result):
