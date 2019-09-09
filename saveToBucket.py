@@ -1,36 +1,33 @@
-import paho.mqtt.client as mqtt
-# import ibm_boto3
-from datetime import datetime
-# import numpy as np
+import json
 import os
-# import json
+from datetime import datetime
 
-# from ibm_botocore.client import Config 
-# from time import gmtime, strftime
+import numpy as np
 
-
+import ibm_boto3
+import paho.mqtt.client as mqtt
+from ibm_botocore.client import Config
 
 #Code adapted from https://cognitiveclass.ai/blog/read-and-write-csv-files-in-python-from-cloud/
 
 #Saving credentials for bucket in a separate file and including a git ignore to protect identity
-# with open("credentials.json", "r") as read_file:
-#     credentials = json.load(read_file)
+with open("credentials.json", "r") as read_file:
+    credentials = json.load(read_file)
 
 # updated
-# bucket_name = 'hw3-bucket1'
-save_path = '/mnt/mybucket'
+bucket_name = 'alex-hw3-bucket'
 
+auth_endpoint = 'https://iam.bluemix.net/oidc/token'
+service_endpoint = 'https://s3.private.us.cloud-object-storage.appdomain.cloud'
 
-# auth_endpoint = 'https://iam.bluemix.net/oidc/token'
-# service_endpoint = 'https://s3.private.us.cloud-object-storage.appdomain.cloud'
-
-# #Store relevant details for interacting with IBM COS store and uploading data
-# resource = ibm_boto3.resource('s3',
-#                       ibm_api_key_id=credentials['apikey'],
-#                       ibm_service_instance_id=credentials['resource_instance_id'],
-#                       ibm_auth_endpoint=auth_endpoint,
-#                       config=Config(signature_version='oauth'),
-#                       endpoint_url=service_endpoint)
+#Store relevant details for interacting with IBM COS store and uploading data
+resource = ibm_boto3.resource(
+    's3',
+    ibm_api_key_id=credentials['apikey'],
+    ibm_service_instance_id=credentials['resource_instance_id'],
+    ibm_auth_endpoint=auth_endpoint,
+    config=Config(signature_version='oauth'),
+    endpoint_url=service_endpoint)
 
 #Code adapted from http://www.steves-internet-guide.com/publishing-messages-mqtt-client/
 broker_address_sub = "169.59.1.50" #Store IP address for broker
@@ -46,7 +43,7 @@ def on_connect(client, userdata, flags, rc):
     if rc==0:
         client.connected_flag=True #set flag
         client.subscribe(topic_sub) #Subscribe to topic
-    print("connected: ", bool(rc))
+    print("connected: ", not bool(rc))
 
 
 #Define function for what to do when a message is received
@@ -63,10 +60,9 @@ def on_message(client, userdata, message):
     file_name = 'face_{}.png'.format(
         str(datetime.timestamp(datetime.now())).split('.')[0])
     msg = message.payload #Grab the payload
-    # resource.Bucket(name=bucket_name).put_object(Key=object_name, Body=msg)#Load data to bucket in COS
+    #Load data to bucket in COS
+    resource.Bucket(name=bucket_name).put_object(Key=file_name, Body=msg)
     # count +=1 #increment counter
-    with open(os.path.join(save_path, file_name), 'w') as f:
-        f.write(msg)
 
 
 client_sub = mqtt.Client() #Initialize a client
@@ -74,5 +70,3 @@ client_sub.on_message = on_message #Use custom on message function
 client_sub.on_connect = on_connect #Use custom on connect function
 client_sub.connect(broker_address_sub) #Connect to broker
 client_sub.loop_forever() #Ensure we can get all images that come through
-
-
