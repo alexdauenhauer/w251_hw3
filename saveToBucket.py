@@ -8,7 +8,8 @@ import ibm_boto3
 import paho.mqtt.client as mqtt
 from ibm_botocore.client import Config
 
-# load credentials file
+# load credentials file -- removed credentials from repo, will not work
+# as written
 with open("credentials.json", "r") as read_file:
     credentials = json.load(read_file)
 
@@ -19,18 +20,21 @@ bucket_name = 'alex-hw3-bucket'
 auth_endpoint = 'https://iam.bluemix.net/oidc/token'
 service_endpoint = 'https://s3.private.us.cloud-object-storage.appdomain.cloud'
 
-resource = ibm_boto3.resource(
+cos = ibm_boto3.resource(
     's3',
     ibm_api_key_id=credentials['apikey'],
     ibm_service_instance_id=credentials['resource_instance_id'],
     ibm_auth_endpoint=auth_endpoint,
     config=Config(signature_version='oauth'),
-    endpoint_url=service_endpoint)
+    endpoint_url=service_endpoint
+)
 
-# Store IP address for broker
+# Store IP address for broker -- this is the ip of the jetson
 broker_ip = "169.59.1.50"
-# Subscribe to all topics in image/capture
+
+# topic for subscription
 topic = "faces"
+
 # choosing QoS 0 because I am in control of the pipeline end-to-end so there
 # is little risk of data loss (and zero reprecussions if there is data loss)
 qos_level = 0
@@ -38,7 +42,7 @@ qos_level = 0
 # callback when connection occurs
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
-        client.connected_flag=True
+        client.connected_flag = True
         client.subscribe(topic)
     print("connected: ", not bool(rc))
 
@@ -46,22 +50,27 @@ def on_connect(client, userdata, flags, rc):
 # callback for when message is received
 def on_message(client, userdata, message):
     print("message received ")
-    print("topic: ",message.topic)
-    print("qos: ",message.qos)
-    print("retain flag: ",message.retain)
-    # generate unique timestamp for each image
+    print("topic: ", message.topic)
+    print("qos: ", message.qos)
+
+    # generate unique timestamp so image naming is unique
     file_name = 'face_{}.png'.format(
         str(datetime.timestamp(datetime.now())).split('.')[0])
+
+    # get message content
     msg = message.payload
+
     # Load data to bucket in COS
-    resource.Bucket(name=bucket_name).put_object(Key=file_name, Body=msg)
+    cos.Bucket(name=bucket_name).put_object(Key=file_name, Body=msg)
 
 
 # Initialize a client
 client = mqtt.Client()
 client.on_message = on_message
 client.on_connect = on_connect
+
 # Connect to broker
 client.connect(broker_ip)
+
 # loop forever to grab all messages
 client.loop_forever()

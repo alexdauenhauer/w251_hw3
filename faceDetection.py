@@ -42,17 +42,22 @@ while(counter < samples):
     for (x, y, w, h) in faces:
         # create rectangle around it
         cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 255, 0), 2)
+
         # crop the ROI
         roi = gray[y:y+h, x:x+w]
-        # convert to bytes
+
+        # encode as png, convert to bytes
         _, img = cv2.imencode('.png', roi)
         msg = img.tobytes()
+
         # publish the message
         client.publish(topic, msg, 0)
 
         # record that a face has been captured
         counter += 1
-        time.sleep(1)
+
+    # add a time buffer so the face image will be slightly more unique
+    time.sleep(1)
 
 # when everything done, release the capture
 cap.release()
