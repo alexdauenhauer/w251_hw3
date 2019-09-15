@@ -12,3 +12,7 @@ some sample face captures are shown here
 ![face capture](face_1568064579.png?raw=true "Title")
 
 ![image on cloud](http://s3.us.cloud-object-storage.appdomain.cloud/alex-hw3-bucket/face_1568065554.png?raw=true "Title")
+
+Here is a screencap of the data being saved in the bucket
+
+![bucket](bucket.png?raw=true "Title")
